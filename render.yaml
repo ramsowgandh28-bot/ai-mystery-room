@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: ai-mystery-room-api
+    name: ai-mystery-room-app-api
     runtime: node
     rootDir: server
     buildCommand: npm install

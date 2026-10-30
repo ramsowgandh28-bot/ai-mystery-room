@@ -1,0 +1,21 @@
+node_modules/
+.env
+.env.local
+.env.test
+!.env.example
+client/.env
+server/.env
+server/.env.test
+dist/
+build/
+.cache/
+coverage/
+.DS_Store
+*.log
+
+# Assessment artifact files
+*.zip
+log.txt
+output.csv
+run_web.py
+hackerrank-orchestrate-october26-main/

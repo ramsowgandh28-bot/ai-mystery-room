@@ -5,7 +5,7 @@
       "headers": [
         {
           "key": "Content-Security-Policy",
-          "value": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://ai-mystery-room-app-api.onrender.com https://*.onrender.com; font-src 'self'; object-src 'none'; frame-ancestors 'none';"
+          "value": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://ai-mystery-room-app-api.onrender.com; font-src 'self'; object-src 'none'; frame-ancestors 'none';"
         },
         {
           "key": "X-Content-Type-Options",

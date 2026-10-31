@@ -3,25 +3,58 @@ import { GeminiMysterySchema, DIFFICULTY_CONFIG } from '../validation/schemas.js
 
 export const buildPrompt = (premise, difficulty) => {
   const config = DIFFICULTY_CONFIG[difficulty];
-  return `You are a mystery writer AI. Generate a complete murder mystery case in strict JSON format.
+  return `You are a master mystery writer AI. Generate a complete murder mystery case in strict JSON format.
 
 Premise: ${premise}
 Difficulty: ${difficulty}
 
-Requirements:
-- title: string (catchy, thematic)
-- story: string (at least 50 characters, rich setting, establishes victim and circumstances)
-- suspects: exactly ${config.suspects} suspects. Each has id ("suspect_1", "suspect_2", ... sequentially numbered up to "suspect_${config.suspects}"), name, description (at least 10 chars), alibi (at least 10 chars). All suspect names must be distinct, unique full names.
-- culprit: The culprit MUST be one of the suspects. If the premise names a person (such as the victim or estate owner), do NOT make that person the culprit; choose another suspect as the culprit.
-- clues: exactly ${config.clues} clues. Each has id ("clue_1", "clue_2", ... sequentially numbered up to "clue_${config.clues}"), text (at least 10 chars). Clues must be sequentially ordered and tell a progressive forensic story.
-  CRITICAL: Do NOT mention the culprit's name, first name, or last name in ANY clue text! Clues must refer strictly to physical forensic evidence (footprints, torn fabric, poison traces, timestamps) or anonymous figures ("an intruder", "a shadowy figure"), never the culprit's name.
-- hints: exactly ${config.hints} hints. Each has id ("hint_1", "hint_2", ... sequentially numbered up to "hint_${config.hints}"), text (at least 10 chars). Hints must guide the player without spoiling the solution.
-  CRITICAL: Do NOT mention the culprit's name, first name, or last name in ANY hint text!
-- solution: object with:
-  - culpritId: matches one of the suspect ids (e.g. "suspect_2")
-  - explanation: at least 50 characters, explaining the motive, method, and how the clues connect to solve the mystery. Must explicitly reference and cite at least two specific clue IDs (for example: "clue_1 and clue_3 demonstrate that...").
+Rules and Requirements:
+1. title: Catchy, thematic mystery title string (up to 200 chars).
+2. story: Rich setting and circumstances string establishing the crime (at least 50 chars).
+3. suspects: Exactly ${config.suspects} suspects. Each suspect object must have:
+   - "id": exactly "suspect_1", "suspect_2", ... sequentially numbered up to "suspect_${config.suspects}".
+   - "name": distinct full name (e.g. "Arthur Finch"). If the premise names a person (e.g. the victim or estate owner), do NOT make them the culprit.
+   - "description": physical description and background (at least 10 chars).
+   - "alibi": claimed whereabouts during the crime (at least 10 chars).
+4. clues: Exactly ${config.clues} clues. Each clue object must have:
+   - "id": exactly "clue_1", "clue_2", ... sequentially numbered up to "clue_${config.clues}".
+   - "text": progressive physical or forensic evidence (at least 10 chars).
+   - CRITICAL CULPRIT SECRECY: The culprit's name, first name, and last name must NEVER appear in ANY clue text! Clues must refer to evidence (footprints, poisons, dropped items, alibi flaws) without naming the culprit.
+5. hints: Exactly ${config.hints} hints. Each hint object must have:
+   - "id": exactly "hint_1", "hint_2", ... sequentially numbered up to "hint_${config.hints}".
+   - "text": guidance for the investigator (at least 10 chars).
+   - CRITICAL CULPRIT SECRECY: The culprit's name, first name, and last name must NEVER appear in ANY hint text!
+6. solution: An object with:
+   - "culpritId": string matching one suspect id (e.g. "suspect_2").
+   - "explanation": at least 50 characters explaining motive, method, and how clues connect. CRITICAL: The explanation MUST explicitly cite at least two clue IDs by their exact identifiers (e.g. "clue_1 and clue_3 prove that...").
 
-Return ONLY valid JSON with keys: title, story, suspects, clues, hints, solution.`;
+Format Example:
+{
+  "title": "The Harrington Diamond Theft",
+  "story": "During an autumn gala at Harrington Manor, Lord Harrington's prized diamond vanished from the locked study.",
+  "suspects": [
+    { "id": "suspect_1", "name": "Arthur Finch", "description": "The nervous estate accountant", "alibi": "Reviewing tax ledgers in the parlor" },
+    { "id": "suspect_2", "name": "Beatrice Lowe", "description": "The visiting botanist cousin", "alibi": "Cataloging specimens in the greenhouse" },
+    { "id": "suspect_3", "name": "Silas Drake", "description": "The quiet private chauffeur", "alibi": "Polishing the motorcar in the courtyard" }
+  ],
+  "clues": [
+    { "id": "clue_1", "text": "A faint smell of rare jasmine oil lingers near the open safe." },
+    { "id": "clue_2", "text": "Glass shards from the study window fell inward onto the carpet." },
+    { "id": "clue_3", "text": "A botany tweezers was discovered discarded near the hedge." },
+    { "id": "clue_4", "text": "Tire tracks reveal the motorcar never left the courtyard driveway." },
+    { "id": "clue_5", "text": "A duplicate safe key was hidden inside a terracotta flowerpot." }
+  ],
+  "hints": [
+    { "id": "hint_1", "text": "Pay close attention to botanical traces left behind in the room." },
+    { "id": "hint_2", "text": "Compare physical evidence with the hobbies of the guests." }
+  ],
+  "solution": {
+    "culpritId": "suspect_2",
+    "explanation": "The jasmine fragrance in clue_1 and the dropped tweezers in clue_3 directly connect to the greenhouse botanist. The hidden key in clue_5 confirms suspect_2 stole the gem."
+  }
+}
+
+Return ONLY raw JSON matching this structure with exactly ${config.suspects} suspects, ${config.clues} clues, and ${config.hints} hints.`;
 };
 
 export const generateMystery = async (premise, difficulty) => {

@@ -6,6 +6,7 @@ const createRateLimiter = (max, windowMs, message = 'Too many requests. Please w
     max,
     standardHeaders: true,
     legacyHeaders: false,
+    skipFailedRequests: true,
     message: {
       success: false,
       error: message,

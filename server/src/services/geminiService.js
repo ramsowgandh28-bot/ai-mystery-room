@@ -138,11 +138,10 @@ export const generateMystery = async (premise, difficulty) => {
         message.includes('PERMISSION_DENIED');
 
       if (isNonRetriable) {
-        if (message.includes('RESOURCE_EXHAUSTED') || status === 429) {
-          err.code = 'RATE_LIMIT_EXCEEDED';
-          err.statusCode = 429;
-        }
-        throw err;
+        const generationError = new Error(err.message || 'Upstream AI generation failed.');
+        generationError.code = 'AI_GENERATION_FAILED';
+        generationError.statusCode = 502;
+        throw generationError;
       }
 
       if (attempt === 3) {

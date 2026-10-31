@@ -11,12 +11,15 @@ Difficulty: ${difficulty}
 Requirements:
 - title: string (catchy, thematic)
 - story: string (at least 50 characters, rich setting, establishes victim and circumstances)
-- suspects: exactly ${config.suspects} suspects. Each has id ("suspect_1", "suspect_2", ... sequentially numbered up to "suspect_${config.suspects}"), name, description (at least 10 chars), alibi (at least 10 chars). All suspect names must be distinct and unique.
-- clues: exactly ${config.clues} clues. Each has id ("clue_1", "clue_2", ... sequentially numbered up to "clue_${config.clues}"), text (at least 10 chars). Clues must be sequentially ordered and tell a progressive story. Do NOT mention or reveal the culprit's name in any clue text.
-- hints: exactly ${config.hints} hints. Each has id ("hint_1", "hint_2", ... sequentially numbered up to "hint_${config.hints}"), text (at least 10 chars). Hints must guide the player without spoiling the solution. Do NOT mention or reveal the culprit's name in any hint text.
+- suspects: exactly ${config.suspects} suspects. Each has id ("suspect_1", "suspect_2", ... sequentially numbered up to "suspect_${config.suspects}"), name, description (at least 10 chars), alibi (at least 10 chars). All suspect names must be distinct, unique full names.
+- culprit: The culprit MUST be one of the suspects. If the premise names a person (such as the victim or estate owner), do NOT make that person the culprit; choose another suspect as the culprit.
+- clues: exactly ${config.clues} clues. Each has id ("clue_1", "clue_2", ... sequentially numbered up to "clue_${config.clues}"), text (at least 10 chars). Clues must be sequentially ordered and tell a progressive forensic story.
+  CRITICAL: Do NOT mention the culprit's name, first name, or last name in ANY clue text! Clues must refer strictly to physical forensic evidence (footprints, torn fabric, poison traces, timestamps) or anonymous figures ("an intruder", "a shadowy figure"), never the culprit's name.
+- hints: exactly ${config.hints} hints. Each has id ("hint_1", "hint_2", ... sequentially numbered up to "hint_${config.hints}"), text (at least 10 chars). Hints must guide the player without spoiling the solution.
+  CRITICAL: Do NOT mention the culprit's name, first name, or last name in ANY hint text!
 - solution: object with:
-  - culpritId: matches one of the suspect ids (e.g. "suspect_1")
-  - explanation: at least 50 characters, explaining the motive, method, and how the clues connect to solve the mystery. Must explicitly reference and cite at least two specific clue IDs (for example: "clue_1 and clue_2 show...").
+  - culpritId: matches one of the suspect ids (e.g. "suspect_2")
+  - explanation: at least 50 characters, explaining the motive, method, and how the clues connect to solve the mystery. Must explicitly reference and cite at least two specific clue IDs (for example: "clue_1 and clue_3 demonstrate that...").
 
 Return ONLY valid JSON with keys: title, story, suspects, clues, hints, solution.`;
 };
@@ -51,17 +54,24 @@ export const generateMystery = async (premise, difficulty) => {
         },
       });
 
-      const text =
+      let cleanText = (
         response?.text ||
         (typeof response?.candidates?.[0]?.content?.parts?.[0]?.text === 'string'
           ? response.candidates[0].content.parts[0].text
-          : '');
+          : '')
+      ).trim();
 
-      if (!text) {
+      if (cleanText.startsWith('```json')) {
+        cleanText = cleanText.replace(/^```json\s*/i, '').replace(/```\s*$/, '').trim();
+      } else if (cleanText.startsWith('```')) {
+        cleanText = cleanText.replace(/^```\s*/, '').replace(/```\s*$/, '').trim();
+      }
+
+      if (!cleanText) {
         throw new Error('Empty response from Gemini API');
       }
 
-      const parsed = JSON.parse(text);
+      const parsed = JSON.parse(cleanText);
       const validated = GeminiMysterySchema.parse(parsed);
 
       // Verify exact count parity
@@ -77,6 +87,11 @@ export const generateMystery = async (premise, difficulty) => {
 
       return validated;
     } catch (err) {
+      console.error(`[Gemini Attempt ${attempt} failed]:`, err.message);
+      if (err.issues) {
+        console.error('[Gemini Validation Issues]:', JSON.stringify(err.issues));
+      }
+
       // Non-retriable error checks
       const status = err.status || err.statusCode;
       const message = err.message || '';

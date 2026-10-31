@@ -132,11 +132,16 @@ export const generateMystery = async (premise, difficulty) => {
         status === 400 ||
         status === 401 ||
         status === 403 ||
+        status === 429 ||
         message.includes('API_KEY_INVALID') ||
         message.includes('RESOURCE_EXHAUSTED') ||
         message.includes('PERMISSION_DENIED');
 
       if (isNonRetriable) {
+        if (message.includes('RESOURCE_EXHAUSTED') || status === 429) {
+          err.code = 'RATE_LIMIT_EXCEEDED';
+          err.statusCode = 429;
+        }
         throw err;
       }
 

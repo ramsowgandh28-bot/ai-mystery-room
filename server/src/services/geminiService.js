@@ -11,12 +11,12 @@ Difficulty: ${difficulty}
 Requirements:
 - title: string (catchy, thematic)
 - story: string (at least 50 characters, rich setting, establishes victim and circumstances)
-- suspects: exactly ${config.suspects} suspects. Each has id ("suspect_1", "suspect_2", ...), name, description (at least 10 chars), alibi (at least 10 chars). All names must be unique.
-- clues: exactly ${config.clues} clues. Each has id ("clue_1", "clue_2", ...), text (at least 10 chars). Clues must be sequentially ordered and tell a progressive story. Do NOT directly state the culprit's name in any clue.
-- hints: exactly ${config.hints} hints. Each has id ("hint_1", "hint_2", ...), text (at least 10 chars). Hints must guide the player without spoiling the solution. Do NOT directly state the culprit's name in any hint.
+- suspects: exactly ${config.suspects} suspects. Each has id ("suspect_1", "suspect_2", ... sequentially numbered up to "suspect_${config.suspects}"), name, description (at least 10 chars), alibi (at least 10 chars). All suspect names must be distinct and unique.
+- clues: exactly ${config.clues} clues. Each has id ("clue_1", "clue_2", ... sequentially numbered up to "clue_${config.clues}"), text (at least 10 chars). Clues must be sequentially ordered and tell a progressive story. Do NOT mention or reveal the culprit's name in any clue text.
+- hints: exactly ${config.hints} hints. Each has id ("hint_1", "hint_2", ... sequentially numbered up to "hint_${config.hints}"), text (at least 10 chars). Hints must guide the player without spoiling the solution. Do NOT mention or reveal the culprit's name in any hint text.
 - solution: object with:
-  - culpritId: matches one of the suspect ids
-  - explanation: at least 50 characters, explaining the motive, method, and how the clues connect to solve the mystery. Must reference at least two specific clue IDs (e.g., "clue_1", "clue_3").
+  - culpritId: matches one of the suspect ids (e.g. "suspect_1")
+  - explanation: at least 50 characters, explaining the motive, method, and how the clues connect to solve the mystery. Must explicitly reference and cite at least two specific clue IDs (for example: "clue_1 and clue_2 show...").
 
 Return ONLY valid JSON with keys: title, story, suspects, clues, hints, solution.`;
 };

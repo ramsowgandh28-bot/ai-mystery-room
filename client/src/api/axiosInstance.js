@@ -12,7 +12,7 @@ export class ApiError extends Error {
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api',
-  timeout: 30000, // 30s for Gemini generation
+  timeout: 120000, // 120s for Gemini generation & server wake-up
 });
 
 // Request interceptor: attach session token for case-specific routes
@@ -34,9 +34,19 @@ api.interceptors.response.use(
   (response) => response.data,
   (error) => {
     const data = error.response?.data;
-    const status = error.response?.status || 500;
-    const message = data?.error || 'An unexpected error occurred.';
-    const code = data?.code || (status === 429 ? 'RATE_LIMIT_EXCEEDED' : 'INTERNAL_SERVER_ERROR');
+    const status = error.response?.status || (error.code === 'ECONNABORTED' ? 504 : 500);
+    const message =
+      data?.error ||
+      (error.code === 'ECONNABORTED'
+        ? 'Mystery generation timed out. The server took too long to respond. Please try again.'
+        : error.message || 'An unexpected error occurred.');
+    const code =
+      data?.code ||
+      (error.code === 'ECONNABORTED'
+        ? 'GATEWAY_TIMEOUT'
+        : status === 429
+        ? 'RATE_LIMIT_EXCEEDED'
+        : 'INTERNAL_SERVER_ERROR');
 
     const apiError = new ApiError(message, code, status);
 

@@ -5,7 +5,7 @@ import api from './axiosInstance.js';
  * On success, persists the returned raw session token to localStorage.
  */
 export const generateCase = async (premise, difficulty) => {
-  const response = await api.post('/cases', { premise, difficulty });
+  const response = await api.post('/cases', { premise, difficulty }, { timeout: 120000 });
   if (response.data?.sessionToken && response.data?._id) {
     localStorage.setItem(`mystery_token_${response.data._id}`, response.data.sessionToken);
   }

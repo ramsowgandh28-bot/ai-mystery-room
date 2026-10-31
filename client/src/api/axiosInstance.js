@@ -12,7 +12,7 @@ export class ApiError extends Error {
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api',
-  timeout: 120000, // 120s for Gemini generation & server wake-up
+  timeout: 180000, // 180s (3m) for Gemini AI generation & server spin-up
 });
 
 // Request interceptor: attach session token for case-specific routes
@@ -38,7 +38,7 @@ api.interceptors.response.use(
     const message =
       data?.error ||
       (error.code === 'ECONNABORTED'
-        ? 'Mystery generation timed out. The server took too long to respond. Please try again.'
+        ? 'Mystery generation timed out. The AI server took longer than expected. Please try again.'
         : error.message || 'An unexpected error occurred.');
     const code =
       data?.code ||

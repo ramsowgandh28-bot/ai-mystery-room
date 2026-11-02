@@ -97,10 +97,12 @@ export const generateMystery = async (premise, difficulty) => {
   const ai = new GoogleGenAI({ apiKey: apiKey || 'test-key' });
   const prompt = buildPrompt(premise, difficulty);
 
+  const model = process.env.GEMINI_MODEL || 'gemini-3.5-flash-lite';
+
   for (let attempt = 1; attempt <= 3; attempt++) {
     try {
       const response = await ai.models.generateContent({
-        model: 'gemini-3.8-flash',
+        model,
         contents: prompt,
         config: {
           responseMimeType: 'application/json',

@@ -2,7 +2,50 @@ import { GoogleGenAI } from '@google/genai';
 import { GeminiMysterySchema, DIFFICULTY_CONFIG } from '../validation/schemas.js';
 
 export const buildPrompt = (premise, difficulty) => {
-  const config = DIFFICULTY_CONFIG[difficulty];
+  const config = DIFFICULTY_CONFIG[difficulty] || DIFFICULTY_CONFIG.easy;
+
+  const exampleSuspects = [
+    { id: 'suspect_1', name: 'Arthur Finch', description: 'The nervous estate accountant', alibi: 'Reviewing tax ledgers in the parlor' },
+    { id: 'suspect_2', name: 'Beatrice Lowe', description: 'The visiting botanist cousin', alibi: 'Cataloging specimens in the greenhouse' },
+    { id: 'suspect_3', name: 'Silas Drake', description: 'The quiet private chauffeur', alibi: 'Polishing the motorcar in the courtyard' },
+    { id: 'suspect_4', name: 'Clara Oswald', description: 'The sharp-eyed antique dealer', alibi: 'Appraising portraits in the east wing' },
+    { id: 'suspect_5', name: 'Marcus Vance', description: 'The estranged business partner', alibi: 'Making telephone calls from the study' },
+  ].slice(0, config.suspects);
+
+  const exampleClues = [
+    { id: 'clue_1', text: 'A faint smell of rare jasmine oil lingers near the open vault door.' },
+    { id: 'clue_2', text: 'Glass shards from the gallery window fell inward onto the carpet.' },
+    { id: 'clue_3', text: 'A pair of botany tweezers was discovered discarded near the courtyard hedge.' },
+    { id: 'clue_4', text: 'Tire tracks reveal the motorcar never left the driveway during the gala.' },
+    { id: 'clue_5', text: 'A duplicate vault key was found hidden inside a terracotta flowerpot.' },
+    { id: 'clue_6', text: 'The ledger pages for the current month have been hastily torn out.' },
+    { id: 'clue_7', text: 'Muddy boot prints matching a size 7 shoe lead towards the greenhouse.' },
+    { id: 'clue_8', text: 'Security logs indicate the vault alarm was deactivated with the master passcode.' },
+    { id: 'clue_9', text: 'Fibers from an embroidered velvet cloak were snagged on the safe latch.' },
+  ].slice(0, config.clues);
+
+  const exampleHints = [
+    { id: 'hint_1', text: 'Pay close attention to botanical traces left behind at the crime scene.' },
+    { id: 'hint_2', text: 'Compare the physical evidence with the hobbies and tools of the guests.' },
+    { id: 'hint_3', text: 'Consider who had specialized knowledge of the plants and the grounds.' },
+  ].slice(0, config.hints);
+
+  const formatExample = JSON.stringify(
+    {
+      title: 'The Stolen Emerald of Blackwood Manor',
+      story: 'During an autumn gala at Blackwood Manor, the host announced that a priceless emerald had vanished from the display vault.',
+      suspects: exampleSuspects,
+      clues: exampleClues,
+      hints: exampleHints,
+      solution: {
+        culpritId: 'suspect_2',
+        explanation: 'The jasmine fragrance in clue_1 and the dropped tweezers in clue_3 directly link to the visiting botanist. The hidden key in clue_5 confirms suspect_2 committed the theft.',
+      },
+    },
+    null,
+    2
+  );
+
   return `You are a master mystery writer AI. Generate a complete murder mystery case in strict JSON format.
 
 Premise: ${premise}
@@ -26,33 +69,10 @@ Rules and Requirements:
    - CRITICAL CULPRIT SECRECY: The culprit's name, first name, and last name must NEVER appear in ANY hint text!
 6. solution: An object with:
    - "culpritId": string matching one suspect id (e.g. "suspect_2").
-   - "explanation": at least 50 characters explaining motive, method, and how clues connect. CRITICAL: The explanation MUST explicitly cite at least two clue IDs by their exact identifiers (e.g. "clue_1 and clue_3 prove that...").
+   - "explanation": at least 50 characters explaining motive, method, and how clues connect. CRITICAL: The explanation MUST explicitly cite at least two clue IDs using their exact lowercase identifiers (e.g. "clue_1 and clue_3 prove that...").
 
-Format Example:
-{
-  "title": "The Harrington Diamond Theft",
-  "story": "During an autumn gala at Harrington Manor, Lord Harrington's prized diamond vanished from the locked study.",
-  "suspects": [
-    { "id": "suspect_1", "name": "Arthur Finch", "description": "The nervous estate accountant", "alibi": "Reviewing tax ledgers in the parlor" },
-    { "id": "suspect_2", "name": "Beatrice Lowe", "description": "The visiting botanist cousin", "alibi": "Cataloging specimens in the greenhouse" },
-    { "id": "suspect_3", "name": "Silas Drake", "description": "The quiet private chauffeur", "alibi": "Polishing the motorcar in the courtyard" }
-  ],
-  "clues": [
-    { "id": "clue_1", "text": "A faint smell of rare jasmine oil lingers near the open safe." },
-    { "id": "clue_2", "text": "Glass shards from the study window fell inward onto the carpet." },
-    { "id": "clue_3", "text": "A botany tweezers was discovered discarded near the hedge." },
-    { "id": "clue_4", "text": "Tire tracks reveal the motorcar never left the courtyard driveway." },
-    { "id": "clue_5", "text": "A duplicate safe key was hidden inside a terracotta flowerpot." }
-  ],
-  "hints": [
-    { "id": "hint_1", "text": "Pay close attention to botanical traces left behind in the room." },
-    { "id": "hint_2", "text": "Compare physical evidence with the hobbies of the guests." }
-  ],
-  "solution": {
-    "culpritId": "suspect_2",
-    "explanation": "The jasmine fragrance in clue_1 and the dropped tweezers in clue_3 directly connect to the greenhouse botanist. The hidden key in clue_5 confirms suspect_2 stole the gem."
-  }
-}
+Format Example for ${difficulty} difficulty (MUST match these exact counts: ${config.suspects} suspects, ${config.clues} clues, ${config.hints} hints):
+${formatExample}
 
 Return ONLY raw JSON matching this structure with exactly ${config.suspects} suspects, ${config.clues} clues, and ${config.hints} hints.`;
 };
@@ -94,7 +114,10 @@ export const generateMystery = async (premise, difficulty) => {
           : '')
       ).trim();
 
-      if (cleanText.startsWith('```json')) {
+      const jsonMatch = cleanText.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        cleanText = jsonMatch[0];
+      } else if (cleanText.startsWith('```json')) {
         cleanText = cleanText.replace(/^```json\s*/i, '').replace(/```\s*$/, '').trim();
       } else if (cleanText.startsWith('```')) {
         cleanText = cleanText.replace(/^```\s*/, '').replace(/```\s*$/, '').trim();
